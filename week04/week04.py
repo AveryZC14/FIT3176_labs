@@ -91,11 +91,80 @@ def print_all(results):
 
 # define your task functions below
 
+def task1(collection):
+    data = collection.find({},{"_id":0,"name":1,"violence.total":1,"violence.physical":1})
+    for d in data:
+        pprint(d)
 
 
+def task2(coll):
+    print("\ntask2")
+    # ,{"_id":0,"name":1,"sexualHarassment":1}
+    data = coll.find({},{"_id":0,"name":1,"sexualHarassment":1}).sort("sexualharassment",-1)
+    for d in data:
+        pprint(d)
+
+def task3(coll):
+    print("\ntask3")
+    data = coll.find({"totalWomen":{"$gt":500000}},{"_id":0,"name":1,"totalWomen":1})
+    for d in data:
+        pprint(d)
+
+
+def task4(coll):
+    print("\ntask4")
+    data = coll.find({},{"_id":0,"name":1,"violence.total":1}).sort("violence.total",-1).limit(3)
+    for d in data:
+        pprint(d)
+
+def task5(coll):
+    print("\ntask5")
+    # data = coll.find({"$expr": {"$gt":[{"$multiply":["$violence.total",0.4]},"$totalWomen"]}},{"_id":0,"name":1,"violence.total":1})#.sort("violence.total",-1)
+    data = coll.find({"$expr": {"$gt":[{"$divide":["$violence.total","$totalWomen"]},0.4]}},{"_id":0,"name":1,"violence.total":1,"totalWomen":1})#.sort("violence.total",-1)
+    for d in data:
+        pprint(d)
+
+def task6(coll):
+    print("\ntask6")
+    # data = coll.find({"$expr": {"$gt":[{"$multiply":["$violence.total",0.4]},"$totalWomen"]}},{"_id":0,"name":1,"violence.total":1})#.sort("violence.total",-1)
+    data = coll.find({},{"_id":0,"name":1,"violence.total":1,"totalWomen":1})#.sort("violence.total",-1)
+    for d in data:
+        pprint(d)
+
+    print("\n")
+
+    coll.update_many({"totalWomen":{"$gt":1000000}},{"$mul":{"violence.total":1.1}})
+
+    data = coll.find({},{"_id":0,"name":1,"violence.total":1,"totalWomen":1})#.sort("violence.total",-1)
+    for d in data:
+        pprint(d)
+    recreate_collection
+
+def task7(coll):
+    print("\ntask7")
+    # data = coll.find({"$expr": {"$gt":[{"$multiply":["$violence.total",0.4]},"$totalWomen"]}},{"_id":0,"name":1,"violence.total":1})#.sort("violence.total",-1)
+    data = coll.find({},{"_id":0,"name":1,"intimate_partner_violence":1,"totalWomen":1}).sort("intimate_partner_violence",-1).skip(2).limit(1)
+    for d in data:
+        pprint(d)
+
+def task8(coll):
+    print("\ntask8")
+    # data = coll.find({"$expr": {"$gt":[{"$multiply":["$violence.total",0.4]},"$totalWomen"]}},{"_id":0,"name":1,"violence.total":1})#.sort("violence.total",-1)
+    # data = coll.find({"$expr":{"$gt":[{"$divide":["$cohabiting_partner.emotional_abuse","$totalWomen"]},0.25]}},{"_id":0,"name":1,"cohabiting_partner.emotional_abuse":1,"totalWomen":1})
+    data = coll.find({"$expr":{"$gt":[{"$divide":["$cohabiting_partner.emotional_abuse","$totalWomen"]},0.25]}},
+    {"_id":0,"name":1,"ratio":{"$divide":["$cohabiting_partner.emotional_abuse","$totalWomen"]}})
+    for d in data:
+        pprint(d)
 
 # call the functions
 if __name__ == "__main__":
     # this will populate the database
     recreate_collection()
-    # task1()
+    task1(violence_stats)
+    task2(violence_stats)
+    task3(violence_stats)
+    task4(violence_stats)
+    task5(violence_stats)
+    task6(violence_stats)
+    task7(violence_stats)
+    task8(violence_stats)
