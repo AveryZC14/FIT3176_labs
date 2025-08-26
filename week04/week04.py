@@ -138,12 +138,43 @@ def task6(coll):
     data = coll.find({},{"_id":0,"name":1,"violence.total":1,"totalWomen":1})#.sort("violence.total",-1)
     for d in data:
         pprint(d)
-    recreate_collection
+    # recreate_collection()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def task7(coll):
     print("\ntask7")
     # data = coll.find({"$expr": {"$gt":[{"$multiply":["$violence.total",0.4]},"$totalWomen"]}},{"_id":0,"name":1,"violence.total":1})#.sort("violence.total",-1)
-    data = coll.find({},{"_id":0,"name":1,"intimate_partner_violence":1,"totalWomen":1}).sort("intimate_partner_violence",-1).skip(2).limit(1)
+    data = coll.find({},{"_id":0,"name":1,"intimate_partner_violence":1,"totalWomen":1}
+    ).sort("intimate_partner_violence",-1
+    ).skip(2).limit(1)
     for d in data:
         pprint(d)
 
