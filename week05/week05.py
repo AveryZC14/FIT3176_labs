@@ -421,19 +421,16 @@ def task10(coll):
     #     }
     # }
 
+    
+
+    sum_mental_illness_males = {"$sum" : [ "$depression_rate.males", "$anxiety_rate.males", "$schizophrenia_rate.males", "$bipolar_rate.males"]}
+    sum_mental_illness_females = {"$sum" : [ "$depression_rate.females", "$anxiety_rate.females", "$schizophrenia_rate.females", "$bipolar_rate.females"]}
+
     project = {
         "$project" : {
             "year" : 1,
-            "mental_illness_males" : {"$sum" : [ "$depression_rate.males", "$anxiety_rate.males", "$schizophrenia_rate.males", "$bipolar_rate.males"]},
-            "mental_illness_females" : {"$sum" : [ "$depression_rate.females", "$anxiety_rate.females", "$schizophrenia_rate.females", "$bipolar_rate.females"]}
-        }
-    }
-
-    project2 = {
-        "$project" : {
-            "year" : 1,
             "gender_disparity" : {
-                "$subtract" : ["$mental_illness_females","$mental_illness_males"]
+                "$subtract" : [sum_mental_illness_females,sum_mental_illness_males]
                 }
         }
     }
@@ -451,7 +448,7 @@ def task10(coll):
         }
     }
 
-    project3 = {
+    project2 = {
         "$project" : {
             "_id" : 0,
             "average_gender_disparity" : 1,
@@ -459,7 +456,7 @@ def task10(coll):
         }
     }
 
-    results = coll.aggregate([mat, project, project2, group, sort, project3])
+    results = coll.aggregate([mat, project, group, sort, project2])
     print_all(results)
 
 def task11(coll):
