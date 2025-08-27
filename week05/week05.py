@@ -184,11 +184,19 @@ def task5(coll):
         }
     }
 
+    # project = {
+    #     "$project": {
+    #         "year":1,
+    #         "total_female_anxiety":{"$toInt":{"$divide": [{"$multiply":["$population","$anxiety_rate.females"]},100]}},
+    #         "total_male_anxiety":{"$toInt":{"$divide": [{"$multiply":["$population","$anxiety_rate.males"]},100]}}
+    #     }
+    # }
+
     project = {
         "$project": {
             "year":1,
-            "total_female_anxiety":{"$toInt":{"$divide": [{"$multiply":["$population","$anxiety_rate.females"]},100]}},
-            "total_male_anxiety":{"$toInt":{"$divide": [{"$multiply":["$population","$anxiety_rate.males"]},100]}}
+            "total_female_anxiety":{"$divide": [{"$multiply":["$population","$anxiety_rate.females"]},100]},
+            "total_male_anxiety":{"$divide": [{"$multiply":["$population","$anxiety_rate.males"]},100]}
         }
     }
 
@@ -203,8 +211,8 @@ def task5(coll):
     project2 = {
         "$project": {
             "_id":0,
-            "total_female_anxiety": 1,
-            "total_male_anxiety": 1,
+            "total_female_anxiety":{"$toInt": "$total_female_anxiety"},
+            "total_male_anxiety":{"$toInt": "$total_male_anxiety"}
         }
     }
 

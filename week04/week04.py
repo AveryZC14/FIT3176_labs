@@ -141,34 +141,6 @@ def task6(coll):
     # recreate_collection()
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def task7(coll):
     print("\ntask7")
     # data = coll.find({"$expr": {"$gt":[{"$multiply":["$violence.total",0.4]},"$totalWomen"]}},{"_id":0,"name":1,"violence.total":1})#.sort("violence.total",-1)
