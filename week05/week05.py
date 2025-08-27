@@ -354,6 +354,159 @@ def task8(coll):
     results = coll.aggregate([mat, group, project, sort, limit])
     print_all(results)
 
+def task9(coll):
+    print("\n\nTask9\n")
+
+    mat = {
+        "$match" : {
+            "depression_rate" : { "$exists" : True }
+        }
+    }
+
+    project = {
+        "$project": {
+            "country":1,
+            "year":1,
+            "difference":{"$subtract":["$depression_rate.females","$depression_rate.males"]}
+        }
+    }
+
+    sort = {
+        "$sort" : {
+            "difference" : -1
+        }
+    }
+
+    group = {
+        "$group" : {
+            "_id" : "$country",
+            #could also be done with max? thought then we can't get the corresponding year
+            "difference" : {"$first" : "$difference"},
+            "year" : {"$first" : "$year"}
+        }
+    }
+
+    project2 = {
+        "$project" : {
+            "_id" : 0,
+            "country" : "$_id",
+            "difference" : 1,
+            "year" : 1
+        }
+    }
+
+    limit = {
+        "$limit" : 5
+    }
+
+    results = coll.aggregate([mat, project, sort, group, sort, project2, limit])
+    print_all(results)
+
+
+def task10(coll):
+    print("\n\nTask10\n")
+
+    mat = {
+        "$match" : {
+            "depression_rate" : {"$exists" : True},
+            "anxiety_rate" : {"$exists" : True},
+            "schizophrenia_rate" : {"$exists" : True},
+            "bipolar_rate" : {"$exists" : True}
+        }
+    }
+
+    # project = {
+    #     "$project" : {
+    #         "depression_males" : {"$divide" : [ {"$multiply" : [ "$depression_rate.males", "$population" ] }, 100]}
+    #     }
+    # }
+
+    project = {
+        "$project" : {
+            "year" : 1,
+            "mental_illness_males" : {"$sum" : [ "$depression_rate.males", "$anxiety_rate.males", "$schizophrenia_rate.males", "$bipolar_rate.males"]},
+            "mental_illness_females" : {"$sum" : [ "$depression_rate.females", "$anxiety_rate.females", "$schizophrenia_rate.females", "$bipolar_rate.females"]}
+        }
+    }
+
+    project2 = {
+        "$project" : {
+            "year" : 1,
+            "gender_disparity" : {
+                "$subtract" : ["$mental_illness_females","$mental_illness_males"]
+                }
+        }
+    }
+
+    group = {
+        "$group" : {
+            "_id" : "$year",
+            "average_gender_disparity" : {"$avg" : "$gender_disparity"}
+        }
+    }
+
+    sort = {
+        "$sort" : {
+            "_id" : -1
+        }
+    }
+
+    project3 = {
+        "$project" : {
+            "_id" : 0,
+            "average_gender_disparity" : 1,
+            "year" : "$_id"
+        }
+    }
+
+    results = coll.aggregate([mat, project, project2, group, sort, project3])
+    print_all(results)
+
+def task11(coll):
+    print("\n\nTask11\n")
+
+    mat = {
+        "$match" : {
+            "depression_rate.females" : {"$exists" : True}
+        }
+    }
+
+    sort = {
+        "$sort" : {
+            "year" : 1
+        }
+    }
+
+    group = {
+        "$group" : {
+            "_id" : "$country",
+            "from_year" : {"$first" : "$year"},
+            "earliest_depression" : {"$first" : "$depression_rate.females"},
+            "to_year" : {"$last" : "$year"},
+            "latest_depression" : {"$last" : "$depression_rate.females"}
+        }
+    }
+
+    project = {
+        "$project" : {
+            "from_year" : 1,
+            "to_year" : 1,
+            "increase_in_deperession": {"$subtract" : ["$latest_depression", "$earliest_depression"]}
+        }
+    }
+
+    sort2 = {
+        "$sort" : {
+            "increase_in_deperession" : -1
+        }
+    }
+
+    limit = {
+        "$limit" : 3
+    }
+
+    results = coll.aggregate([mat, sort, group, project, sort2, limit])
+    print_all(results)
 
 if __name__ == "__main__":
     # recreate_collection()
@@ -365,3 +518,6 @@ if __name__ == "__main__":
     task6(collection)
     task7(collection)
     task8(collection)
+    task9(collection)
+    task10(collection)
+    task11(collection)
