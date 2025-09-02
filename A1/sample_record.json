@@ -1,0 +1,33 @@
+{
+  "listing_id": 10803,
+  "listing_url": "https://www.airbnb.com/rooms/10803",
+  "name": "Room in Deco Apartment, Brunswick East",
+  "description": "A large air conditioned room with firm queen spring mattress bed in a vintage apartment. Located right outside is a tram to the city just 20 minutes away. This area is known for its arts culture, live music, cafes and international food.",
+  "neighbourhood": "Moreland",
+  "accommodates": 2,
+  "price": 55,
+  "minimum_nights": 7,
+  "has_availability": true,
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      144.97951,
+      -37.76606
+    ]
+  },
+  "host": {
+    "id": 38901,
+    "url": "https://www.airbnb.com/users/show/38901",
+    "name": "Lindsay",
+    "is_superhost": true,
+    "joined": "2009-09-16T00:00:00.000Z"
+  },
+  "review": {
+    "total_reviews": 190,
+    "accuracy": 4.68,
+    "cleanliness": 4.04,
+    "checkin": 4.75,
+    "communication": 4.73,
+    "location": 4.69
+  }
+}
