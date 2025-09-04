@@ -86,16 +86,25 @@ def restructure_document(doc):
         location_doc["coordinates"] = [ float(doc["longitude"]), float(doc["latitude"]) ]
         new_doc["location"] = location_doc
     
+    #embedded document for the host
     host_doc = {}
+    #format for striptime
+    time_format = "%Y-%m-%dT%H:%M:%S.%fZ"
+
     simple_restructure(doc, host_doc, "host_id", "id")
     simple_restructure(doc, host_doc, "host_url", "url")
     simple_restructure(doc, host_doc, "host_name", "name")
     simple_restructure(doc, host_doc, "host_is_superhost", "is_superhost", (lambda available: available == 't'))
-    host_doc["joined"] = "2025-08-01T00:00:00.000Z"
-    simple_restructure(doc, host_doc, "host_joined","joined",(lambda date: date+"T00:00:00.000Z"))
+
+    #if no date is given, use this default date
+    default_date = datetime.strptime("2025-08-01T00:00:00.000Z", time_format)
+    host_doc["joined"] = default_date
+
+    simple_restructure(doc, host_doc, "host_joined","joined",(lambda date: datetime.strptime(date+"T00:00:00.000Z", time_format)))
 
     new_doc["host"] = host_doc
 
+    #embedded document for the review scores
     review_doc = {}
     simple_restructure(doc, review_doc, "number_of_reviews", "total_reviews")
     simple_restructure(doc, review_doc, "review_scores_accuracy", "accuracy")
@@ -111,8 +120,28 @@ def restructure_document(doc):
 
 # Task 2: Delete Listings of Inactive Hosts
 def task2(yr):
-    # write your solution here. 
-    pass
+    
+    # Find hosts that joined more than yr years ago
+    # delete if they have no reviews.
+
+    # group by host id, then get the min joined date and sum of reviews
+    group = {
+        "$group": {
+            "_id": "$host.id",
+            "joined": {"$min": "$host.joined"},
+            "total_reviews": {"$sum": "$review.total_reviews"}
+        }
+    }
+
+    # match hosts that joined more than yr years ago and have no reviews
+    mat = {
+        "$match": {
+            "joined": {"$lt": datetime.now() - timedelta(days=yr*365)},
+            "total_reviews": 0
+        }
+    }
+
+    
 
 
 # Task 3: Identify Top Hosts
