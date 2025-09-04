@@ -113,7 +113,9 @@ def restructure_document(doc):
     simple_restructure(doc, review_doc, "review_scores_communication", "communication")
     simple_restructure(doc, review_doc, "review_scores_location", "location")
 
-    new_doc["review"] = review_doc
+    #add the review doc if it's not empty
+    if (review_doc != {}):
+        new_doc["review"] = review_doc
     
     return new_doc  # Return the restructured document
     
@@ -124,11 +126,15 @@ def task2(yr):
     # Find hosts that joined more than yr years ago
     # delete if they have no reviews.
 
+    # we can't match first, because we need to ensure that we get every single instanec of the hosts that joined over yr years ago
+    # if we match first, we might miss some instances of the host that have reviews
+
     # group by host id, then get the min joined date and sum of reviews
     group = {
         "$group": {
             "_id": "$host.id",
             "joined": {"$min": "$host.joined"},
+            # if the review doc doesn't exist in a document, mongodb will treat it as 0
             "total_reviews": {"$sum": "$review.total_reviews"}
         }
     }
@@ -136,12 +142,49 @@ def task2(yr):
     # match hosts that joined more than yr years ago and have no reviews
     mat = {
         "$match": {
+            #days is the largest time unit that timedelta takes, so we convert years to days
             "joined": {"$lt": datetime.now() - timedelta(days=yr*365)},
             "total_reviews": 0
         }
     }
 
-    
+
+    results = list(collection.aggregate([group, mat]))
+
+    pprint(results)
+
+    # delete listings of these hosts
+    host_ids_to_delete = [result["_id"] for result in results]
+    delete_result = collection.delete_many({"host.id": {"$in": host_ids_to_delete}})
+    print("Number of deleted listings: " + str(delete_result.deleted_count))
+
+    #identify hosts that joined more than floor(yr/2) years ago but not more than yr years ago
+    #if they have no reviews, mark them as to_be_deleted 
+
+    #match
+    mat2 = {
+        "$match": {
+            "joined": {
+                #we don't need to do a greater than or equal to, because we are already deleting hosts that joined more than yr years ago
+                "$lt": datetime.now() - timedelta(days=(yr/2)*365)
+            },
+            "review.total_reviews": 0
+        }
+    }
+
+    #reuse group stage from before
+    results2 = list(collection.aggregate([group, mat2]))
+
+    host_ids_to_mark = [result["_id"] for result in results2]
+    update_result = collection.update_many(
+        #get the listings with hosts that match the ids
+        {"host.id": {"$in": host_ids_to_mark}},
+        #set to_be_deleted to true
+        {"$set": {"to_be_deleted": True}}
+    )
+    print("Number of to_be_deleted listings: " + str(update_result.modified_count))
+
+
 
 
 # Task 3: Identify Top Hosts
@@ -159,5 +202,16 @@ def task4(city, x):
 
 # Call tasks
 if __name__ == "__main__":
-    recreate_collection()
-    #task2()
+    # recreate_collection()
+    # task2(2)
+    pprint(list(collection.find({
+        # "host.joined" : {
+        #     "$lt": datetime.now() - timedelta(days=11*365),
+        # },
+        "reviews.total_reviews": 0
+    },{
+        "host.id": 1,
+        "host.joined": 1,
+        "review.total_reviews": 1,
+        "_id": 0
+    }).limit(5)))
