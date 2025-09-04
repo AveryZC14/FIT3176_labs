@@ -151,8 +151,6 @@ def task2(yr):
 
     results = list(collection.aggregate([group, mat]))
 
-    pprint(results)
-
     # delete listings of these hosts
     host_ids_to_delete = [result["_id"] for result in results]
     delete_result = collection.delete_many({"host.id": {"$in": host_ids_to_delete}})
@@ -166,9 +164,9 @@ def task2(yr):
         "$match": {
             "joined": {
                 #we don't need to do a greater than or equal to, because we are already deleting hosts that joined more than yr years ago
-                "$lt": datetime.now() - timedelta(days=(yr/2)*365)
+                "$lt": datetime.now() - timedelta(days=(yr//2)*365)
             },
-            "review.total_reviews": 0
+            "total_reviews": 0
         }
     }
 
@@ -176,6 +174,7 @@ def task2(yr):
     results2 = list(collection.aggregate([group, mat2]))
 
     host_ids_to_mark = [result["_id"] for result in results2]
+
     update_result = collection.update_many(
         #get the listings with hosts that match the ids
         {"host.id": {"$in": host_ids_to_mark}},
@@ -189,8 +188,57 @@ def task2(yr):
 
 # Task 3: Identify Top Hosts
 def task3(n):
-    # write your solution here
-    pass
+    # identify guest-favourite listings
+    # guest-favourite listing conditions:
+    # at least 100 reviews
+    # aggregate review score > 20 (accuracy + cleanliness + checkin + communication + location)
+
+    gf_match = {
+        "$match": {
+            #total reviews must be at least 100
+            "review.total_reviews": {"$gte": 100},
+            #sum of all types of review score must be greater than 20
+            "$expr": {
+                "$gt": [
+                    {
+                        "$sum": [
+                            "$review.accuracy",
+                            "$review.cleanliness",
+                            "$review.checkin",
+                            "$review.communication",
+                            "$review.location"
+                        ]
+                    },
+                    20
+                ]
+            }
+        }
+    }
+
+    gf_listings = list(collection.aggregate([gf_match]))
+    gf_ids = [listing["listing_id"] for listing in guest_favourite_listings]
+    collection.update_many(
+        #for each guest favourite listing
+        {"listing_id": {"$in": gf_ids}},
+        #set is_guest_favourite to true
+        {"$set": {"is_guest_favourite": True}}
+    )
+
+    # assign a score to each listing based on the following criteria:
+    # default score: 1 point
+    # is_guest_favourite: 2 points
+    # has no reviews or has no sub reviews: -1 point
+
+    project_score = {
+        "$project": {
+            "listing_id": 1,
+            "score": {
+                "$add": [
+                    
+                ]
+            }
+        }
+    }
     
 
 # Task 4: Find the Best Listing and Nearby Listings
@@ -202,16 +250,24 @@ def task4(city, x):
 
 # Call tasks
 if __name__ == "__main__":
-    # recreate_collection()
-    # task2(2)
-    pprint(list(collection.find({
-        # "host.joined" : {
-        #     "$lt": datetime.now() - timedelta(days=11*365),
-        # },
-        "reviews.total_reviews": 0
-    },{
-        "host.id": 1,
-        "host.joined": 1,
-        "review.total_reviews": 1,
-        "_id": 0
-    }).limit(5)))
+    recreate_collection()
+    task2(10)
+    # q = collection.find({
+    #     "host.joined" : {
+    #         "$lt": datetime.now() - timedelta(days=2*365),
+    #     },
+    #     "$or" : [
+    #         {"review": {"$exists": False}},
+    #         {"review.total_reviews": 0}
+    #     ]
+    # },{
+    #     "host.id": 1,
+    #     "host.joined": 1,
+    #     "review.total_reviews": 1,
+    #     "_id": 0
+    # })
+
+    # lq = list(q)
+    # print("\n",len(lq),"\n")
+    # pprint([doc for doc in q])
+    # pprint(lq)
