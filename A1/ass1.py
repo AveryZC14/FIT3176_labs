@@ -15,7 +15,6 @@ Task 1: Recreate collection: This function must delete the listings collection (
 in assignment requirements and create any indexes that are required.
 '''
 def recreate_collection():
-    # Feel free to create new functions that this function calls to recreate the collection
 
     collection_name = "listings"
     json_file = "listings.json"
@@ -35,12 +34,14 @@ def recreate_collection():
         restructured_doc = restructure_document(doc)
         collection.insert_one(restructured_doc)
     
+    #create the index on location
     collection.create_index([("location","2dsphere")])
 
     
     print(f"Inserted {len(data)} records into the '{collection_name}' collection.")
 
 
+#a simple, reusable document restructuring function 
 def simple_restructure(
             old_doc,
             new_doc, 
@@ -53,15 +54,6 @@ def simple_restructure(
         
         if (name_in_data in old_doc) and (old_doc[name_in_data] != None):
             new_doc[new_name] = transformation_func(old_doc[name_in_data])
-
-def create_restructure_func(old_doc, new_doc):
-    def restructure_func(
-        name_in_data,
-        new_name = "", 
-        transformation_func = (lambda x:x)
-        ):
-            simple_restructure(old_doc,new_doc,name_in_data,new_name,transformation_func)
-    return restructure_func
 
 def restructure_document(doc):
     # Initialize an empty document, we will add fields and values to this document in the required format
@@ -103,6 +95,7 @@ def restructure_document(doc):
     default_date = datetime.strptime("2025-08-01T00:00:00.000Z", time_format)
     host_doc["joined"] = default_date
 
+    #override the default if it exists in the document
     simple_restructure(doc, host_doc, "host_joined","joined",(lambda date: datetime.strptime(date+"T00:00:00.000Z", time_format)))
 
     new_doc["host"] = host_doc
@@ -286,6 +279,7 @@ def task3(n):
         {"$set": { "listing_score": 2 }}
     )
 
+    #group the listings by their hosts, summing the listing scores
     host_group = {
         "$group" : {
             "_id" : "$host.id",
@@ -295,6 +289,7 @@ def task3(n):
         }
     }
 
+    #sort the hosts by their total listing scores, then name
     host_sort = {
         "$sort" : {
             "listing_score" : -1,
@@ -302,10 +297,12 @@ def task3(n):
         }
     }
 
+    #only get the top n hosts
     host_nth_limit = {
         "$limit" : n
     }
 
+    #use this to skip each host that's not the nth host
     host_skip = {
         "$skip" : (n-1)
     }
@@ -313,7 +310,7 @@ def task3(n):
     #get the listing_score for the nth host
     nth_score_doc = collection.aggregate([ host_group, host_sort, host_nth_limit, host_skip ])
     nth_score_list = list(nth_score_doc)
-    #if done correctly, nth score list should only have one element, we should be able to get it's listing score
+    #if done correctly, nth_score_list should only have one element, we should be able to get it's listing score
     # pprint(nth_score_list)
     nth_score = nth_score_list[0]["listing_score"]
     # print("nth score list: ", len(nth_score_list), nth_score)
@@ -325,6 +322,7 @@ def task3(n):
         }
     }
 
+    #use host_match_score instead of host_nth_limit and host_skip, which ensures that all hosts that have the same score as the nth host are also included
     n_best_hosts = collection.aggregate([ host_group, host_sort, host_match_score ])
     best_hosts = list(n_best_hosts)
 
@@ -355,6 +353,7 @@ def task4(city, x):
         }
     }
 
+    #project to sum the sub review scores into the agg_review_score, also grab a bunch of other fields
     city_project = {
         "$project" : {    
             "listing_id" : 1 ,
@@ -375,6 +374,7 @@ def task4(city, x):
         }
     }
 
+    #sort by each field as required
     city_sort = {
         "$sort" : {
             "agg_review_score" : -1,
@@ -384,6 +384,7 @@ def task4(city, x):
         }
     }
 
+    #just get one
     city_limit = {
         "$limit" : 1
     }
@@ -393,14 +394,13 @@ def task4(city, x):
 
     best_listing = listings_ranked[0]
     print("Best Listing:")
-    # for l in listings_ranked:
-    #     pprint(l)
-    # print(best_listing["agg_review_score"])
     print( f"Listing ID: {best_listing["listing_id"]}, Host Name: {best_listing["host_name"]}, Price: {best_listing["price"]}, Neighbourhood: {best_listing["neighbourhood"]}, Listing URL: {best_listing["url"]}\n")
 
+    #use x to calculate the price bounds
     price_upper = best_listing["price"] + x
     price_lower = best_listing["price"] - x
     
+    #use geoNear to make a new field on each document, distance from the best
     near_best = {
         "$geoNear" : {
             "near" : best_listing["location"],
@@ -410,13 +410,6 @@ def task4(city, x):
     }
 
     #match price, but also make sure the best is filtered out
-    # match_price = {
-    #     "$match" : {
-    #         { "$gte" : [ "$price", price_lower ] },
-    #         { "$lte" : [ "$price", price_upper ] },
-    #         { "$ne" : [ "$listing_id", best_listing["listing_id"]] }
-    #     }
-    # }
     match_price = {
         "$match" : {
             "price": {"$gte" : price_lower, "$lte" : price_upper},
@@ -424,10 +417,11 @@ def task4(city, x):
         }
     }
 
+    #sort by the distance from the best host
+    #not sure if other sorts are required? it's highly unlikely two places will be the same distance
     sort_dist = {
         "$sort" : {
             "dist_from_best" : 1,
-
         }
     }
     
@@ -435,6 +429,7 @@ def task4(city, x):
         "$limit" : 5
     }
 
+    #aggregate to get similar listings
     similar_listings = list(collection.aggregate([ near_best, match_price, sort_dist, limit_five]))
 
     print("Top-5 Listings:")
@@ -447,6 +442,10 @@ def task4(city, x):
 
 # Call tasks
 if __name__ == "__main__":
+
+    # a = collection.find()
+    # for i in a:
+    #     pprint(i)
     # recreate_collection()
     # task2(10)
     # print("\n\n")
@@ -468,27 +467,28 @@ if __name__ == "__main__":
     # print("\n\n")
     # task3(9)
 
-    collection.update_many(
-    {},  # match all docs
-        [
-            {
-                "$set": {
-                    "agg_review_score": {
-                        "$sum": [
-                            "$review.accuracy",
-                            "$review.cleanliness",
-                            "$review.checkin",
-                            "$review.communication",
-                            "$review.location"
-                        ]
-                    }
-                }
-            }
-        ]
-    )
+    #test code to get all 
+    # collection.update_many(
+    # {},  # match all docs
+    #     [
+    #         {
+    #             "$set": {
+    #                 "agg_review_score": {
+    #                     "$sum": [
+    #                         "$review.accuracy",
+    #                         "$review.cleanliness",
+    #                         "$review.checkin",
+    #                         "$review.communication",
+    #                         "$review.location"
+    #                     ]
+    #                 }
+    #             }
+    #         }
+    #     ]
+    # )
 
 
-    task4("Stonnington",10)
+    # task4("Stonnington",10)
 
     # q = collection.find({
     #     "host.joined" : {
