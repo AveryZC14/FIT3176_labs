@@ -279,6 +279,36 @@ def task3(n):
         {"$set": { "listing_score": 2 }}
     )
 
+    # listing_score_project = {
+    #     "$project" : {
+    #         "host" : 1,
+    #         "listing_score" = {
+    #             "$cond": { if: { "$is_guest_favourite" : True },
+    #             then: 2,
+    #             else:
+    #                 {
+    #                     "$cond" : {
+    #                         if: {{"$or": [
+    #                             #if the review document doesnt exist
+    #                             { "review" : { "$exists" : False }},
+    #                             #if none of the sub review scores are present
+    #                             { "$and" : [
+    #                                 { "review.accuracy" : { "$exists" : False }},
+    #                                 { "review.cleanliness" : { "$exists" : False }},
+    #                                 { "review.checkin" : { "$exists" : False }},
+    #                                 { "review.communication" : { "$exists" : False }},
+    #                                 { "review.location" : { "$exists" : False }}
+    #                             ]},
+    #                             #or if there are 0 total reviews
+    #                             { "review.total_reviews" : 0 }
+    #                         ]}},
+    #                     }
+    #                 }
+    #             }
+    #         }
+    #     }
+    # }
+
     #group the listings by their hosts, summing the listing scores
     host_group = {
         "$group" : {
@@ -392,6 +422,11 @@ def task4(city, x):
     #aggregate to find the best listing
     listings_ranked = list(collection.aggregate([ city_match, city_project, city_sort, city_limit]))
 
+    #if no valid listing was found, end early
+    if len(listings_ranked) == 0:
+        print("No valid listing found")
+        return
+
     best_listing = listings_ranked[0]
     print("Best Listing:")
     print( f"Listing ID: {best_listing["listing_id"]}, Host Name: {best_listing["host_name"]}, Price: {best_listing["price"]}, Neighbourhood: {best_listing["neighbourhood"]}, Listing URL: {best_listing["url"]}\n")
@@ -418,10 +453,14 @@ def task4(city, x):
     }
 
     #sort by the distance from the best host
-    #not sure if other sorts are required? it's highly unlikely two places will be the same distance
     sort_dist = {
         "$sort" : {
             "dist_from_best" : 1,
+            #the following sort parameters are only in the example and not the details, so idk if they should be here
+            "reviews.total_reviews": -1,
+            "price": 1,
+            "listing_id": 1
+
         }
     }
     
@@ -488,7 +527,8 @@ if __name__ == "__main__":
     # )
 
 
-    # task4("Stonnington",10)
+    task4("Monash",10)
+    task4("Stonnington",10)
 
     # q = collection.find({
     #     "host.joined" : {
