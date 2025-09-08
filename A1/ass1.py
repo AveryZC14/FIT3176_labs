@@ -279,35 +279,41 @@ def task3(n):
         {"$set": { "listing_score": 2 }}
     )
 
-    # listing_score_project = {
-    #     "$project" : {
-    #         "host" : 1,
-    #         "listing_score" = {
-    #             "$cond": { if: { "$is_guest_favourite" : True },
-    #             then: 2,
-    #             else:
-    #                 {
-    #                     "$cond" : {
-    #                         if: {{"$or": [
-    #                             #if the review document doesnt exist
-    #                             { "review" : { "$exists" : False }},
-    #                             #if none of the sub review scores are present
-    #                             { "$and" : [
-    #                                 { "review.accuracy" : { "$exists" : False }},
-    #                                 { "review.cleanliness" : { "$exists" : False }},
-    #                                 { "review.checkin" : { "$exists" : False }},
-    #                                 { "review.communication" : { "$exists" : False }},
-    #                                 { "review.location" : { "$exists" : False }}
-    #                             ]},
-    #                             #or if there are 0 total reviews
-    #                             { "review.total_reviews" : 0 }
-    #                         ]}},
-    #                     }
-    #                 }
-    #             }
-    #         }
-    #     }
-    # }
+    bad_listing_condition = {
+        "$or": [
+        #if the review document doesnt exist
+        { "review" : { "$exists" : False }},
+        #if none of the sub review scores are present
+        { "$and" : [
+            { "review.accuracy" : { "$exists" : False }},
+            { "review.cleanliness" : { "$exists" : False }},
+            { "review.checkin" : { "$exists" : False }},
+            { "review.communication" : { "$exists" : False }},
+            { "review.location" : { "$exists" : False }}
+        ]},
+        #or if there are 0 total reviews
+        { "review.total_reviews" : 0 }
+    ]}
+
+    listing_score_project = {
+        "$project" : {
+            "host" : 1,
+            "listing_score" : {
+                "$cond": { 
+                    "if": "$is_guest_favourite" ,
+                    "then": 2,
+                    "else":
+                    {
+                        "$cond" : {
+                            "if": bad_listing_condition,
+                            "then": -1,
+                            "else": 1
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     #group the listings by their hosts, summing the listing scores
     host_group = {
@@ -338,7 +344,7 @@ def task3(n):
     }
 
     #get the listing_score for the nth host
-    nth_score_doc = collection.aggregate([ host_group, host_sort, host_nth_limit, host_skip ])
+    nth_score_doc = collection.aggregate([listing_score_project, host_group, host_sort, host_nth_limit, host_skip ])
     nth_score_list = list(nth_score_doc)
     #if done correctly, nth_score_list should only have one element, we should be able to get it's listing score
     # pprint(nth_score_list)
@@ -494,8 +500,8 @@ if __name__ == "__main__":
     # print("\n\n")
     # task3(3)
     # print("\n\n")
-    # task3(4)
-    # print("\n\n")
+    task3(4)
+    print("\n\n")
     # task3(5)
     # print("\n\n")
     # task3(6)
@@ -527,8 +533,8 @@ if __name__ == "__main__":
     # )
 
 
-    task4("Monash",10)
-    task4("Stonnington",10)
+    # task4("Monash",10)
+    # task4("Stonnington",10)
 
     # q = collection.find({
     #     "host.joined" : {
