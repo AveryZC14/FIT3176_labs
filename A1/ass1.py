@@ -46,8 +46,8 @@ def simple_restructure(
             old_doc,
             new_doc, 
             name_in_data,
-            new_name = "", 
-            transformation_func = (lambda x:x)
+            new_name = "", #optional: what to rename the field to in the new doc
+            transformation_func = (lambda x:x) # optional, a transformation done to the data
         ):
         if (new_name == ""):
             new_name = name_in_data
@@ -321,9 +321,8 @@ def task3(n):
     nth_score_doc = collection.aggregate([listing_score_project, host_group, host_sort, host_nth_limit, host_skip ])
     nth_score_list = list(nth_score_doc)
     #if done correctly, nth_score_list should only have one element, we should be able to get it's listing score
-    # pprint(nth_score_list)
+
     nth_score = nth_score_list[0]["listing_score"]
-    # print("nth score list: ", len(nth_score_list), nth_score)
 
     #match based on score
     host_match_score = {
