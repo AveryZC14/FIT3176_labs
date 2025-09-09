@@ -266,12 +266,15 @@ def task3(n):
 
     #condition block to calculate the listing score for each listing
     listing_score_cond = {
+        #first check if it's guest favourite
         "$cond": {
+            #is_guest_favourite is already a boolean
             "if" : "$is_guest_favourite" ,
             "then" : 2 ,
+            #if it's not, then check if it's a bad listing
             "else" : { "$cond": {
                     "if" : bad_listing_cond ,
-                    "then" : -2 ,
+                    "then" : -1 ,
                     "else" : 1
                 }
             }
@@ -471,7 +474,7 @@ if __name__ == "__main__":
     # print("\n\n")
     # task3(3)
     # print("\n\n")
-    task3(4)
+    # task3(4)
     # print("\n\n")
     # task3(5)
     # print("\n\n")
