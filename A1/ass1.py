@@ -245,39 +245,46 @@ def task3(n):
     # is_guest_favourite: 2 points
     # has no reviews or has no sub reviews: -1 point
 
-    #set all the scores to 1 initially
-    collection.update_many(
-        {},
-        {"$set": { "listing_score": 1 }}
-    )
-
-    #set the listing scores to -1 where they don't have reviews
-    collection.update_many(
-        {"$or": [
-            #if the review document doesnt exist
-            { "review" : { "$exists" : False }},
-            #if none of the sub review scores are present
+    #boolean condition for a bad listing
+    bad_listing_cond = {
+        #each condition for a bad cond
+        "$or" : [
+            #if the review doc doesnt exist
+            { "$not" : "$review" },
+            #if none of the sub documents exist
             { "$and" : [
-                { "review.accuracy" : { "$exists" : False }},
-                { "review.cleanliness" : { "$exists" : False }},
-                { "review.checkin" : { "$exists" : False }},
-                { "review.communication" : { "$exists" : False }},
-                { "review.location" : { "$exists" : False }}
+                { "$not" : "$review.accuracy" },
+                { "$not" : "$review.cleanliness" },
+                { "$not" : "$review.checkin" },
+                { "$not" : "$review.communication" },
+                { "$not" : "$review.location" },
             ]},
-            #or if there are 0 total reviews
-            { "review.total_reviews" : 0 }
-        ]},
+            #if there are 0 total reviews
+            { "$eq" : ["$review.total_reviews" , 0 ] }
+        ]
+    }
 
-        {"$set": { "listing_score": -1 }}
-    )
+    #condition block to calculate the listing score for each listing
+    listing_score_cond = {
+        "$cond": {
+            "if" : "$is_guest_favourite" ,
+            "then" : 2 ,
+            "else" : { "$cond": {
+                    "if" : bad_listing_cond ,
+                    "then" : -2 ,
+                    "else" : 1
+                }
+            }
+        }
+    }
 
-    #for each guest favourite listing, set the score to 2
-    collection.update_many(
-        #reuse the guest favourite condition
-        gf_condition,
-        
-        {"$set": { "listing_score": 2 }}
-    )
+    #project to add a listing score to each document
+    listing_score_project = {
+        "$project" : {
+            "host" : 1,
+            "listing_score" : listing_score_cond
+        }
+    }
 
     #group the listings by their hosts, summing the listing scores
     host_group = {
@@ -308,7 +315,7 @@ def task3(n):
     }
 
     #get the listing_score for the nth host
-    nth_score_doc = collection.aggregate([host_group, host_sort, host_nth_limit, host_skip ])
+    nth_score_doc = collection.aggregate([listing_score_project, host_group, host_sort, host_nth_limit, host_skip ])
     nth_score_list = list(nth_score_doc)
     #if done correctly, nth_score_list should only have one element, we should be able to get it's listing score
     # pprint(nth_score_list)
@@ -323,7 +330,7 @@ def task3(n):
     }
 
     #use host_match_score instead of host_nth_limit and host_skip, which ensures that all hosts that have the same score as the nth host are also included
-    n_best_hosts = collection.aggregate([ host_group, host_sort, host_match_score ])
+    n_best_hosts = collection.aggregate([listing_score_project, host_group, host_sort, host_match_score ])
     best_hosts = list(n_best_hosts)
 
     for host in best_hosts:
@@ -455,7 +462,7 @@ if __name__ == "__main__":
     # a = collection.find()
     # for i in a:
     #     pprint(i)
-    recreate_collection()
+    # recreate_collection()
     # task2(10)
     # print("\n\n")
     # task3(1)
