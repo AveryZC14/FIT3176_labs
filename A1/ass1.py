@@ -189,28 +189,6 @@ def task3(n):
     # at least 100 reviews
     # aggregate review score > 20 (accuracy + cleanliness + checkin + communication + location)
 
-    gf_match = {
-        "$match": {
-            #total reviews must be at least 100
-            "review.total_reviews": {"$gte": 100},
-            #sum of all types of review score must be greater than 20
-            "$expr": {
-                "$gt": [
-                    {
-                        "$sum": [
-                            "$review.accuracy",
-                            "$review.cleanliness",
-                            "$review.checkin",
-                            "$review.communication",
-                            "$review.location"
-                        ]
-                    },
-                    20
-                ]
-            }
-        }
-    }
-
     gf_condition = {
         #total reviews must be at least 100
         "review.total_reviews": {"$gte": 100},
@@ -460,71 +438,7 @@ def task4(city, x):
 
 # Call tasks
 if __name__ == "__main__":
-
-    # a = collection.find()
-    # for i in a:
-    #     pprint(i)
-    # recreate_collection()
-    # task2(10)
-    # print("\n\n")
-    # task3(1)
-    # print("\n\n")
-    # task3(2)
-    # print("\n\n")
-    # task3(3)
-    # print("\n\n")
-    # task3(4)
-    # print("\n\n")
+    recreate_collection()
+    # task2(4)
     # task3(5)
-    # print("\n\n")
-    # task3(6)
-    # print("\n\n")
-    # task3(7)
-    # print("\n\n")
-    # task3(8)
-    # print("\n\n")
-    # task3(9)
-
-    #test code to get all 
-    # collection.update_many(
-    # {},  # match all docs
-    #     [
-    #         {
-    #             "$set": {
-    #                 "agg_review_score": {
-    #                     "$sum": [
-    #                         "$review.accuracy",
-    #                         "$review.cleanliness",
-    #                         "$review.checkin",
-    #                         "$review.communication",
-    #                         "$review.location"
-    #                     ]
-    #                 }
-    #             }
-    #         }
-    #     ]
-    # )
-
-
     # task4("Monash",10)
-    # task4("Stonnington",10)
-
-    # q = collection.find({
-    #     "host.joined" : {
-    #         "$lt": datetime.now() - timedelta(days=2*365),
-    #     },
-    #     "$or" : [
-    #         {"review": {"$exists": False}},
-    #         {"review.total_reviews": 0}
-    #     ]
-    # },{
-    #     "host.id": 1,
-    #     "host.joined": 1,
-    #     "review.total_reviews": 1,
-    #     "_id": 0
-    # })
-
-    # lq = list(q)
-    # print("\n",len(lq),"\n")
-    # pprint([doc for doc in q])
-    # pprint(lq)
